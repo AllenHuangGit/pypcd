@@ -713,7 +713,7 @@ class PointCloud(object):
         return pc
 
     @staticmethod
-    def from_msg(msg, squeeze=True):
+    def from_msg(msg, squeeze=True, remove_nans=True):
         """ from pointcloud2 msg
         squeeze: fix when clouds get 1 as first dim
         """
@@ -738,7 +738,10 @@ class PointCloud(object):
             if field.count > 1:
                 warnings.warn('fields with count > 1 are not well tested')
             md['count'].append(field.count)
-        pc_data = np.squeeze(numpy_pc2.pointcloud2_to_array(msg))
+        pc_data = np.squeeze(numpy_pc2.pointcloud2_to_array(msg).reshape(-1))
+        if remove_nans:
+            mask = np.isfinite(pc_data['x']) & np.isfinite(pc_data['y']) & np.isfinite(pc_data['z'])
+        pc_data = pc_data[mask]
         md['width'] = len(pc_data)
         md['points'] = len(pc_data)
         pc = PointCloud(md, pc_data)
